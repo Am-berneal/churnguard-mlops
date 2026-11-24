@@ -1,0 +1,17 @@
+[project]
+name = "churn-mlops"
+version = "1.0.0"
+description = "End-to-end customer churn prediction with MLflow, Optuna and FastAPI"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E402"]  # api/app.py adjusts sys.path before importing the package

@@ -1,0 +1,33 @@
+name: churn-mlops
+
+python_env: python_env.yaml
+
+entry_points:
+  main:
+    parameters:
+      n_trials: {type: int, default: 30}
+      test_size: {type: float, default: 0.2}
+    command: "PYTHONPATH=src python -m churn.pipeline --n-trials {n_trials} --test-size {test_size}"
+
+  prepare_data:
+    parameters:
+      test_size: {type: float, default: 0.2}
+    command: "PYTHONPATH=src python -m churn.data --test-size {test_size}"
+
+  train:
+    parameters:
+      model_type: {type: string, default: hist_gb}
+      params: {type: string, default: "{}"}
+    command: "PYTHONPATH=src python -m churn.train --model-type {model_type} --params '{params}'"
+
+  tune:
+    parameters:
+      model_type: {type: string, default: hist_gb}
+      n_trials: {type: int, default: 30}
+    command: "PYTHONPATH=src python -m churn.tune --model-type {model_type} --n-trials {n_trials}"
+
+  register:
+    parameters:
+      metric: {type: string, default: cv_roc_auc_mean}
+      min_improvement: {type: float, default: 0.0}
+    command: "PYTHONPATH=src python -m churn.register --metric {metric} --min-improvement {min_improvement}"

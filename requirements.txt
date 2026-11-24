@@ -1,0 +1,9 @@
+mlflow>=3.0,<4
+scikit-learn>=1.5
+pandas>=2.1
+pyarrow>=14
+optuna>=4.0
+matplotlib>=3.8
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6

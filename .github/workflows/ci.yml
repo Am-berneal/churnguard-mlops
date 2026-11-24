@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check src api tests
+      - name: Unit and API tests
+        run: pytest -q
+
+  train-smoke:
+    # Runs the real pipeline with a few trials so a broken training path fails CI.
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src:.
+      MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m churn.pipeline --n-trials 3
+      - name: Check the champion model loads and predicts
+        run: |
+          python -c "
+          import mlflow, pandas as pd
+          m = mlflow.sklearn.load_model('models:/churn-classifier@champion')
+          df = pd.read_parquet('data/processed/test.parquet').head(5)
+          print(m.predict_proba(df)[:, 1])
+          "
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t churn-mlops .
