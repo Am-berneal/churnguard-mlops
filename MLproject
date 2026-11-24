@@ -26,6 +26,11 @@ entry_points:
       n_trials: {type: int, default: 30}
     command: "PYTHONPATH=src python -m churn.tune --model-type {model_type} --n-trials {n_trials}"
 
+  score:
+    parameters:
+      input: {type: string, default: examples/customers_sample.csv}
+    command: "PYTHONPATH=src python -m churn.score {input}"
+
   register:
     parameters:
       metric: {type: string, default: cv_roc_auc_mean}

@@ -4,6 +4,7 @@ Entry point: ``python -m churn.train --model-type hist_gb``
 """
 import argparse
 import json
+import warnings
 
 import mlflow
 import pandas as pd
@@ -18,6 +19,7 @@ from churn.evaluate import (
     log_plots,
 )
 from churn.features import build_pipeline, split_xy
+from churn.profile import build_profile
 from churn.tracking import init_experiment, project_run
 
 # Types skops must be told to trust when saving. Safe here because these are
@@ -60,15 +62,21 @@ def train_and_log(model_type: str, params: dict | None = None, run_name: str | N
         if log_model:
             log_plots(y_test, test_proba, threshold)
             log_feature_importance(pipe, X_test, y_test)
-            signature = infer_signature(X_test, test_proba)
-            mlflow.sklearn.log_model(
-                pipe, name="model", signature=signature,
-                input_example=X_test.head(3), pyfunc_predict_fn="predict_proba",
-                # Ship our package with the model so it loads anywhere.
-                code_paths=[str(config.ROOT / "src" / "churn")],
-                skops_trusted_types=TRUSTED_TYPES,
-            )
+            # Inputs never contain missing integers (validated upstream), so MLflow's
+            # "integer columns can't hold NaN" hint doesn't apply here.
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*Integer columns.*")
+                signature = infer_signature(X_test, test_proba)
+                mlflow.sklearn.log_model(
+                    pipe, name="model", signature=signature,
+                    input_example=X_test.head(3), pyfunc_predict_fn="predict_proba",
+                    # Ship our package with the model so it loads anywhere.
+                    code_paths=[str(config.ROOT / "src" / "churn")],
+                    skops_trusted_types=TRUSTED_TYPES,
+                )
             mlflow.log_dict({"threshold": threshold}, "model_config.json")
+            # Training distributions: used for explanations and drift monitoring.
+            mlflow.log_dict(build_profile(X_train, y_train), "reference_profile.json")
 
         print(f"[{model_type}] cv_auc={cv_auc.mean():.4f} test_auc={metrics['roc_auc']:.4f} "
               f"f1={metrics['f1']:.4f} run_id={run.info.run_id}")

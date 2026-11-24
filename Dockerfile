@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
 COPY api ./api
+COPY examples ./examples
 COPY MLproject python_env.yaml ./
 
 RUN useradd --create-home appuser && mkdir -p /app/data && chown -R appuser /app

@@ -1,7 +1,7 @@
 [project]
 name = "churn-mlops"
-version = "1.0.0"
-description = "End-to-end customer churn prediction with MLflow, Optuna and FastAPI"
+version = "2.0.0"
+description = "Churn prediction, explanation and retention with MLflow, FastAPI and Gemini"
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]

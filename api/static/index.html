@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChurnGuard · Customer Retention Intelligence</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#overview"><img src="/static/logo.png" alt="ChurnGuard"></a>
+    <nav>
+      <a href="#overview" data-page="overview"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>Overview</a>
+      <a href="#predict" data-page="predict"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z"/></svg>Predict Customer</a>
+      <a href="#batch" data-page="batch"><svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zm0 6h16v4H4zm0 6h16v4H4z"/></svg>Batch Scoring</a>
+      <a href="#model" data-page="model"><svg viewBox="0 0 24 24"><path d="M5 20V10h3v10zm5.5 0V4h3v16zM16 20v-7h3v7z"/></svg>Model Insights</a>
+      <a href="#monitoring" data-page="monitoring"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Monitoring</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div id="model-pill" class="pill pill-muted"><span class="dot"></span><span>Connecting…</span></div>
+      <div class="foot-links"><a href="/docs" target="_blank">API docs ↗</a><a href="http://localhost:5000" target="_blank">MLflow ↗</a></div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- OVERVIEW -->
+    <section id="page-overview" class="page">
+      <header class="page-head">
+        <div><h1>Welcome back</h1><p class="muted">Predict which customers are likely to leave, see why, and act before they do.</p></div>
+      </header>
+      <div class="grid kpis" id="kpis"></div>
+      <div class="grid two">
+        <div class="card">
+          <div class="card-head"><h3>What drives churn</h3><span class="hint">Average impact on churn probability</span></div>
+          <div id="drivers" class="bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Live traffic</h3><a href="#monitoring" class="link">Monitoring →</a></div>
+          <div id="live-mini"></div>
+        </div>
+      </div>
+      <div class="grid two">
+        <a class="card action-card" href="#predict">
+          <div class="action-icon">👤</div>
+          <div><h3>Predict a single customer</h3><p class="muted">Get the churn risk, the reasons behind it and the best retention offer.</p></div>
+        </a>
+        <a class="card action-card" href="#batch">
+          <div class="action-icon">📄</div>
+          <div><h3>Score a customer list</h3><p class="muted">Upload a CSV and get a call list ranked by revenue at risk.</p></div>
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Recent predictions</h3></div>
+        <div id="recent" class="table-wrap"></div>
+      </div>
+    </section>
+
+    <!-- PREDICT -->
+    <section id="page-predict" class="page">
+      <header class="page-head">
+        <div><h1>Predict Customer</h1><p class="muted">Fill in a customer's details to see their churn risk and what to do about it.</p></div>
+        <div class="btn-row">
+          <button class="btn ghost" data-example="risky">High-risk example</button>
+          <button class="btn ghost" data-example="loyal">Loyal example</button>
+        </div>
+      </header>
+      <div class="predict-layout">
+        <form id="customer-form" class="card form" autocomplete="off">
+          <fieldset><legend>Account</legend><div class="fields" id="f-account"></div></fieldset>
+          <fieldset><legend>Services</legend><div class="fields" id="f-services"></div></fieldset>
+          <fieldset><legend>Demographics</legend><div class="fields" id="f-demo"></div></fieldset>
+          <div class="form-foot"><button type="submit" class="btn primary" id="predict-btn">Predict churn risk</button></div>
+        </form>
+        <div class="card result" id="result">
+          <div class="empty">
+            <img src="/static/icon-512.png" alt="">
+            <p>Fill in the form to see this customer's churn risk.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATCH -->
+    <section id="page-batch" class="page">
+      <header class="page-head">
+        <div><h1>Batch Scoring</h1><p class="muted">Upload a customer list. You get back a call list, ranked so the most valuable at-risk customers come first.</p></div>
+        <a class="btn ghost" href="/sample.csv">Download sample CSV</a>
+      </header>
+      <label class="dropzone card" id="dropzone">
+        <input type="file" id="csv-input" accept=".csv" hidden>
+        <div class="drop-icon">⬆</div>
+        <strong>Drop a CSV of customers here, or click to browse</strong>
+        <span class="muted">Same 19 columns as the form (customerID optional). Up to 5,000 rows.</span>
+      </label>
+      <div id="batch-out"></div>
+    </section>
+
+    <!-- MODEL -->
+    <section id="page-model" class="page">
+      <header class="page-head"><div><h1>Model Insights</h1><p class="muted">How the model was built and how well it performs on customers it has never seen.</p></div></header>
+      <div class="card model-head" id="model-head"></div>
+      <div class="grid metrics" id="metrics"></div>
+      <div class="grid two">
+        <div class="card"><div class="card-head"><h3>Model comparison</h3><span class="hint">Cross-validated ROC AUC</span></div><div id="runs" class="bars"></div></div>
+        <div class="card"><div class="card-head"><h3>Confusion matrix</h3><span class="hint">Test set</span></div><img class="plot" data-plot="test_confusion_matrix.png" alt=""></div>
+      </div>
+      <div class="grid two">
+        <div class="card"><div class="card-head"><h3>ROC curve</h3></div><img class="plot" data-plot="test_roc_curve.png" alt=""></div>
+        <div class="card"><div class="card-head"><h3>Feature importance</h3><span class="hint">Permutation, drop in ROC AUC</span></div><img class="plot" data-plot="feature_importance.png" alt=""></div>
+      </div>
+    </section>
+
+    <!-- MONITORING -->
+    <section id="page-monitoring" class="page">
+      <header class="page-head">
+        <div><h1>Monitoring</h1><p class="muted">Is live traffic still similar to the data the model was trained on?</p></div>
+        <button class="btn ghost" id="refresh-mon">Refresh</button>
+      </header>
+      <div id="mon-out"></div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

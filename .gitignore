@@ -8,5 +8,7 @@ mlartifacts/
 mlflow.db
 data/raw/
 data/processed/
+data/predictions.db
+*_scored.csv
 .env
 .DS_Store
