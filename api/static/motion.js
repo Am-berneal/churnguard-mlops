@@ -126,6 +126,21 @@
   }
 
   /* ---------- 6. gauge sweep, heartbeat, what-if ---------- */
+  let lastGauge = {};
+  function celebrate(anchor) {
+    const r = anchor.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height * 0.6;
+    for (let i = 0; i < 46; i++) {
+      const d = document.createElement("i"), ang = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 140;
+      d.className = "cg-confetti";
+      d.style.cssText = `left:${cx}px;top:${cy}px;background:${["#16a34a", "#4f46e5", "#86efac", "#818cf8", "#f59e0b"][i % 5]}`;
+      document.body.append(d);
+      d.animate([{ transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+        { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist + 80}px) rotate(${Math.random() * 720}deg) scale(.6)`, opacity: 0 }],
+        { duration: 1100 + Math.random() * 500, easing: OUT }).onfinish = () => d.remove();
+    }
+    const t = document.getElementById("toast");
+    if (t) { t.textContent = "Risk dropped to low: customer retained"; t.className = "toast show success"; clearTimeout(t._h); t._h = setTimeout(() => (t.className = "toast"), 2600); }
+  }
   const arcPoint = (p) => { const a = Math.PI * (1 - p); return [100 + 80 * Math.cos(a), 96 - 80 * Math.sin(a)]; };
   function enhanceResult(res) {
     const svg = $(".gauge", res);
@@ -135,11 +150,18 @@
     const p = parseFloat(num.textContent) / 100;
     const level = ["high", "medium", "low"].find((l) => $(`.result-meta .risk.${l}`, res)) || "medium";
     arc.classList.add("cg-arc");
-    const L = arc.getTotalLength();
-    arc.style.strokeDasharray = L;
-    arc.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 1300, easing: SPRING });
-    const t0 = performance.now();
-    (function count(t) { const k = Math.min(1, (t - t0) / 1300), e = 1 - Math.pow(1 - k, 4); num.textContent = `${Math.round(p * 100 * e)}%`; if (k < 1) requestAnimationFrame(count); })(t0);
+    // morph from the previous prediction (or from 0) by redrawing the arc each frame
+    const from = lastGauge.p ?? 0, t0 = performance.now(), D = 1300;
+    const ease = (k) => { const c = 1.70158 * 1.2; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); };
+    (function draw(t) {
+      const k = Math.min(1, (t - t0) / D), q = Math.max(0.003, from + (p - from) * ease(k));
+      const [x, y] = arcPoint(Math.min(0.999, q));
+      arc.setAttribute("d", `M20 96 A80 80 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`);
+      num.textContent = `${Math.round(Math.max(0, Math.min(1, q)) * 100)}%`;
+      if (k < 1) requestAnimationFrame(draw); else num.textContent = `${Math.round(p * 100)}%`;
+    })(t0);
+    if (lastGauge.level && lastGauge.level !== "low" && level === "low") setTimeout(() => celebrate(svg), 900);
+    lastGauge = { p, level };
     svg.style.setProperty("--glow", COLORS[level]);
     svg.style.setProperty("--beat", { high: ".9s", medium: "1.6s", low: "3s" }[level]);
     setTimeout(() => svg.classList.add("beat"), 1300);
